@@ -1,0 +1,160 @@
+'use client'
+
+import { Plus, MessageSquare, Settings, LogOut, X } from 'lucide-react'
+import Link from 'next/link'
+import { Logo } from '@/components/logo'
+import { Button } from '@/components/ui/button'
+import type { Chat } from '@/lib/mock-data'
+
+interface ChatSidebarProps {
+  chats: Chat[]
+  activeChatId: string | null
+  onSelectChat: (chatId: string) => void
+  onNewChat: () => void
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function ChatSidebar({
+  chats,
+  activeChatId,
+  onSelectChat,
+  onNewChat,
+  isOpen,
+  onClose,
+}: ChatSidebarProps) {
+  const formatDate = (date: Date) => {
+    const now = new Date()
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const groupChatsByDate = (chats: Chat[]) => {
+    const groups: { [key: string]: Chat[] } = {}
+    
+    chats.forEach((chat) => {
+      const dateLabel = formatDate(chat.timestamp)
+      if (!groups[dateLabel]) {
+        groups[dateLabel] = []
+      }
+      groups[dateLabel].push(chat)
+    })
+    
+    return groups
+  }
+
+  const groupedChats = groupChatsByDate(chats)
+
+  return (
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-sidebar border-r border-sidebar-border transition-transform duration-300 lg:static lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+          <Logo size="sm" />
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* New Chat Button */}
+        <div className="p-4">
+          <Button
+            onClick={() => {
+              onNewChat()
+              onClose()
+            }}
+            className="w-full justify-start gap-2 bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Chat
+          </Button>
+        </div>
+
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto px-2">
+          {Object.entries(groupedChats).map(([dateLabel, dateChats]) => (
+            <div key={dateLabel} className="mb-4">
+              <p className="mb-2 px-2 text-xs font-medium text-sidebar-foreground/60">
+                {dateLabel}
+              </p>
+              <div className="space-y-1">
+                {dateChats.map((chat) => (
+                  <button
+                    key={chat.id}
+                    onClick={() => {
+                      onSelectChat(chat.id)
+                      onClose()
+                    }}
+                    className={`group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors ${
+                      activeChatId === chat.id
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                    }`}
+                  >
+                    <MessageSquare className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{chat.title}</p>
+                      <p className="truncate text-xs text-sidebar-foreground/60">
+                        {chat.lastMessage}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-sidebar-border p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sm font-medium text-sidebar-accent-foreground">
+                U
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-sidebar-foreground">
+                  User
+                </p>
+                <p className="truncate text-xs text-sidebar-foreground/60">
+                  user@example.com
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button className="rounded-lg p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors">
+                <Settings className="h-4 w-4" />
+              </button>
+              <Link
+                href="/login"
+                className="rounded-lg p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
+  )
+}
