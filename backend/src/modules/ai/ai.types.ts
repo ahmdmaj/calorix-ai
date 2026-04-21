@@ -9,5 +9,5 @@ export interface FoodExtractionResult {
   meal_type: 'light' | 'medium' | 'heavy';
   confidence: number;
   ambiguous: boolean;
-  source: 'mock' | 'openai';
+  source: 'mock' | 'openai' | 'gemini';
 }

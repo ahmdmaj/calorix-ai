@@ -1,9 +1,47 @@
 [
-  { "name": "rice and curry", "calories_min": 450, "calories_max": 650 },
-  { "name": "kottu roti", "calories_min": 550, "calories_max": 750 },
-  { "name": "string hoppers", "calories_min": 180, "calories_max": 240 },
-  { "name": "pol sambol", "calories_min": 80, "calories_max": 120 },
-  { "name": "dhal curry", "calories_min": 120, "calories_max": 180 },
-  { "name": "pittu", "calories_min": 300, "calories_max": 420 },
-  { "name": "lamprais", "calories_min": 700, "calories_max": 950 }
+  {
+    "name": "rice and curry",
+    "calories_min": 450,
+    "calories_max": 650
+  },
+  {
+    "name": "kottu roti",
+    "calories_min": 550,
+    "calories_max": 750
+  },
+  {
+    "name": "string hoppers",
+    "calories_min": 180,
+    "calories_max": 240
+  },
+  {
+    "name": "pol sambol",
+    "calories_min": 80,
+    "calories_max": 120
+  },
+  {
+    "name": "dhal curry",
+    "calories_min": 120,
+    "calories_max": 180
+  },
+  {
+    "name": "pittu",
+    "calories_min": 300,
+    "calories_max": 420
+  },
+  {
+    "name": "lamprais",
+    "calories_min": 700,
+    "calories_max": 950
+  },
+  {
+    "name": "chicken burger",
+    "calories_min": 600,
+    "calories_max": 850
+  },
+  {
+    "name": "pizza slices",
+    "calories_min": 250,
+    "calories_max": 350
+  }
 ]
