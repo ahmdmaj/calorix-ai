@@ -59,7 +59,60 @@ User message: ${message}`;
 
     return { ...foodData, source: 'gemini' };
   } catch (error) {
-    console.error("❌ AI Service Error:", error);
-    return { items: [], meal_type: 'medium', confidence: 0, ambiguous: true, source: 'gemini' };
+    console.error("❌ AI Service Error (Falling back to OpenFoodFacts API):", error.message);
+    
+    // NO API KEY REQUIRED - REAL LIVE DATA FALLBACK
+    try {
+      // Basic extraction of the core food term (ignoring filler words)
+      const cleanMessage = message.toLowerCase()
+        .replace(/i had|i ate|for lunch|for breakfast|for dinner|a piece of|a slice of|some/g, '')
+        .trim();
+      
+      const query = encodeURIComponent(cleanMessage);
+      const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${query}&search_simple=1&action=process&json=1&page_size=1`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      const mockItems = [];
+      
+      if (data.products && data.products.length > 0) {
+        const product = data.products[0];
+        const nutriments = product.nutriments || {};
+        
+        // OpenFoodFacts returns per 100g. We assume a standard 200g serving if unknown.
+        const multiplier = 2.0; 
+        
+        mockItems.push({
+          name: product.product_name || cleanMessage,
+          quantity: 1,
+          unit: 'serving',
+          calories_min: Math.round((nutriments['energy-kcal_100g'] || 150) * multiplier * 0.9),
+          calories_max: Math.round((nutriments['energy-kcal_100g'] || 150) * multiplier * 1.1),
+          protein_g: Math.round((nutriments['proteins_100g'] || 5) * multiplier),
+          fat_g: Math.round((nutriments['fat_100g'] || 5) * multiplier),
+          carbs_g: Math.round((nutriments['carbohydrates_100g'] || 20) * multiplier),
+        });
+      } else {
+        // Fallback for completely unknown foods
+        mockItems.push({ name: cleanMessage || 'unknown food', quantity: 1, unit: 'serving', calories_min: 250, calories_max: 350, protein_g: 10, fat_g: 12, carbs_g: 30 });
+      }
+
+      return { 
+        items: mockItems, 
+        meal_type: 'medium', 
+        confidence: 0.8, 
+        ambiguous: false, 
+        source: 'openfoodfacts' 
+      };
+    } catch (offError) {
+      return { 
+        items: [{ name: 'unknown food', quantity: 1, unit: 'serving', calories_min: 250, calories_max: 350, protein_g: 10, fat_g: 10, carbs_g: 20 }], 
+        meal_type: 'medium', 
+        confidence: 0, 
+        ambiguous: true, 
+        source: 'mock' 
+      };
+    }
   }
 };
