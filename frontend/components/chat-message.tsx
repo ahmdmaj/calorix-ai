@@ -1,7 +1,8 @@
 'use client'
 
-import { Bot, User } from 'lucide-react'
+import { Bot, User, Activity } from 'lucide-react'
 import type { Message } from '@/lib/mock-data'
+import { NutritionCard } from '@/components/nutrition-card'
 
 interface ChatMessageProps {
   message: Message
@@ -11,17 +12,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
   const isAssistant = message.role === 'assistant'
 
   return (
-    <div className={`flex gap-4 ${isAssistant ? 'justify-start' : 'justify-end'}`}>
+    <div className={`flex gap-4 animate-in slide-in-from-bottom-4 fade-in duration-500 ${isAssistant ? 'justify-start' : 'justify-end'}`}>
       {isAssistant && (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent">
           <Bot className="h-4 w-4 text-accent-foreground" />
         </div>
       )}
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
           isAssistant
-            ? 'bg-card text-card-foreground'
-            : 'bg-secondary text-secondary-foreground'
+            ? 'bg-card border border-border text-card-foreground'
+            : 'bg-primary text-primary-foreground'
         }`}
       >
         <div className="whitespace-pre-wrap text-sm leading-relaxed">
@@ -46,27 +47,34 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
         
         {isAssistant && message.result && (
-          <div className="mt-4 space-y-3 pt-2">
-            <div className="font-bold text-sm">
-              Calories: {message.result.total_min} - {message.result.total_max} kcal
-            </div>
+          <div className="mt-4 pt-2">
+            <NutritionCard 
+              totalMin={message.result.total_min} 
+              totalMax={message.result.total_max}
+              proteinG={message.result.total_protein_g || 0}
+              fatG={message.result.total_fat_g || 0}
+              carbsG={message.result.total_carbs_g || 0}
+            />
             
             {message.result.activities && message.result.activities.length > 0 && (
-              <div className="text-sm">
-                <div className="font-medium mb-1">Activities:</div>
-                <ul className="list-disc pl-5 space-y-1">
+              <div className="mt-4 bg-secondary/40 rounded-lg p-3 text-sm animate-in fade-in duration-700 delay-300">
+                <div className="font-medium flex items-center gap-1 mb-2 text-foreground">
+                  <Activity className="w-4 h-4 text-primary" /> 
+                  Activity Recommendations
+                </div>
+                <div className="flex flex-wrap gap-2">
                   {message.result.activities.map((activity, idx) => (
-                    <li key={idx} className="text-foreground/90">
-                      {activity.type}: {activity.duration_minutes} mins
-                    </li>
+                    <span key={idx} className="inline-flex items-center rounded-full bg-background border border-border px-2.5 py-0.5 text-xs font-semibold transition-colors hover:bg-secondary">
+                      {activity.type}: {activity.duration_minutes}m
+                    </span>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
             
-            {message.result.disclaimer && (
-              <div className="mt-4 text-[10px] text-muted-foreground/70 italic leading-tight">
-                {message.result.disclaimer}
+            {message.result.health_note && (
+              <div className="mt-3 text-[11px] text-muted-foreground/80 italic leading-tight">
+                💡 {message.result.health_note}
               </div>
             )}
           </div>
