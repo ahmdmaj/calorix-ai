@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, MessageSquare, Settings, LogOut, X } from 'lucide-react'
+import { Plus, MessageSquare, Settings, LogOut, X, Activity } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
@@ -76,7 +76,7 @@ export function ChatSidebar({
           </button>
         </div>
 
-        {/* New Chat Button */}
+        {/* New Chat Button & Dashboard Link */}
         <div className="p-4">
           <Button
             onClick={() => {
@@ -88,6 +88,15 @@ export function ChatSidebar({
             <Plus className="h-4 w-4" />
             New Chat
           </Button>
+          <Link href="/dashboard" className="block mt-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+            >
+              <Activity className="h-4 w-4" />
+              View Dashboard
+            </Button>
+          </Link>
         </div>
 
         {/* Chat List */}
