@@ -125,6 +125,18 @@ export function ChatSidebar({
           ))}
         </div>
 
+        {/* Daily Progress */}
+        <div className="px-4 py-4 border-t border-sidebar-border bg-sidebar-accent/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-sidebar-foreground">Daily Goal</span>
+            <span className="text-xs text-sidebar-foreground/70">1,200 / 2,000 kcal</span>
+          </div>
+          <div className="h-2.5 w-full bg-sidebar-border rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full transition-all duration-1000" style={{ width: '60%' }} />
+          </div>
+          <p className="text-[10px] text-sidebar-foreground/50 mt-2 text-center">Resetting in 8 hrs</p>
+        </div>
+
         {/* Footer */}
         <div className="border-t border-sidebar-border p-4">
           <div className="flex items-center justify-between">
