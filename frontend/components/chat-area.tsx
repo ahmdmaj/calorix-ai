@@ -42,7 +42,7 @@ export function ChatArea({
               <Flame className="h-4 w-4 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-sm font-medium text-foreground">CalorieAI</h1>
+              <h1 className="text-sm font-medium text-foreground">Calorix AI</h1>
               <p className="text-xs text-muted-foreground">Your nutrition assistant</p>
             </div>
           </div>

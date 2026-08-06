@@ -89,7 +89,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
       )}
 
       <p className="mt-2 text-center text-xs text-muted-foreground">
-        CalorieAI provides estimates. Consult a professional for precise nutrition advice.
+        Calorix AI provides estimates. Consult a professional for precise nutrition advice.
       </p>
     </form>
   )

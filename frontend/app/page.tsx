@@ -12,7 +12,7 @@ export default function HomePage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
               <Flame className="h-4 w-4 text-accent-foreground" />
             </div>
-            <span className="text-lg font-semibold text-foreground">CalorieAI</span>
+            <span className="text-lg font-semibold text-foreground">Calorix AI</span>
           </div>
           <nav className="flex items-center gap-4">
             <Link
@@ -119,7 +119,7 @@ export default function HomePage() {
             Ready to transform your nutrition?
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Join thousands who are already tracking smarter with CalorieAI.
+            Join thousands who are already tracking smarter with Calorix AI.
           </p>
           <div className="mt-8">
             <Link href="/register">
@@ -140,10 +140,10 @@ export default function HomePage() {
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent">
                 <Flame className="h-3 w-3 text-accent-foreground" />
               </div>
-              <span className="text-sm font-medium text-foreground">CalorieAI</span>
+              <span className="text-sm font-medium text-foreground">Calorix AI</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              2026 CalorieAI. All rights reserved.
+              2026 Calorix AI. All rights reserved.
             </p>
           </div>
         </div>

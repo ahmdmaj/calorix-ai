@@ -7,7 +7,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'CalorieAI - Smart Calorie Tracking',
+  title: 'Calorix AI - Smart Calorie Tracking',
   description: 'AI-powered calorie tracking made simple',
   generator: 'v0.app',
   icons: {
