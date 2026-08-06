@@ -1,11 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FoodExtractionResult } from './ai.types';
 
-// 👇 Notice we removed the genAI initialization from up here!
-
 export const extract = async (message: string): Promise<FoodExtractionResult> => {
   try {
-    // 👇 We moved it INSIDE the function!
     console.log("🕵️ KEY CHECK:", process.env.GEMINI_API_KEY?.substring(0, 15) + "...");
 
     if (!process.env.GEMINI_API_KEY) {
@@ -21,7 +18,38 @@ export const extract = async (message: string): Promise<FoodExtractionResult> =>
       },
     });
 
-    const prompt = `You are a food entity extraction engine. Extract the food items from the user message. Return ONLY a valid JSON object matching this exact schema: { "items": [{ "name": "string", "quantity": number, "unit": "string" }], "meal_type": "light"|"medium"|"heavy", "confidence": number, "ambiguous": boolean }. Rules: Lowercase all food names. Normalise quantities. Do not invent items. User message: ${message}`;
+    const prompt = `You are a nutrition expert and food calorie estimation engine.
+The user will describe food they ate. Extract all food items and estimate their calories.
+
+Return ONLY a valid JSON object with this EXACT schema:
+{
+  "items": [
+    {
+      "name": "string (lowercase food name)",
+      "quantity": number (numeric quantity, default 1 if not specified),
+      "unit": "string (e.g. piece, cup, gram, slice, bowl)",
+      "calories_min": number (lower bound calorie estimate for the given quantity),
+      "calories_max": number (upper bound calorie estimate for the given quantity),
+      "protein_g": number (estimated protein in grams),
+      "fat_g": number (estimated fat in grams),
+      "carbs_g": number (estimated carbohydrates in grams)
+    }
+  ],
+  "meal_type": "light" | "medium" | "heavy",
+  "confidence": number (0 to 1),
+  "ambiguous": boolean
+}
+
+Rules:
+- Estimate calories for EVERY food item, no matter what it is — use your nutrition knowledge.
+- Use realistic, well-known calorie values (e.g., 1 medium apple ≈ 80-95 kcal).
+- If quantity is unclear, assume a standard serving size.
+- Calories should reflect the stated quantity (e.g., 2 eggs = ~140-160 kcal total).
+- Do NOT return null or 0 for calories unless the item genuinely has no calories (e.g., water).
+- Lowercase all food names.
+- Support any food from any cuisine worldwide (Sri Lankan, Indian, Western, etc.).
+
+User message: ${message}`;
 
     const result = await model.generateContent(prompt);
     const parsedText = result.response.text();
