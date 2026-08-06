@@ -23,16 +23,27 @@ export const createChat = async (req: AuthRequest, res: Response): Promise<void>
     const result = {
       food_items: nutritionData.food_items.map((item) => ({
         name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
         calories_min: item.calories_min || 0,
         calories_max: item.calories_max || 0,
+        protein_g: item.protein_g || 0,
+        fat_g: item.fat_g || 0,
+        carbs_g: item.carbs_g || 0,
         source: item.source,
+        warning: item.warning,
       })),
       total_min: nutritionData.total_min,
       total_max: nutritionData.total_max,
+      total_protein_g: nutritionData.total_protein_g,
+      total_fat_g: nutritionData.total_fat_g,
+      total_carbs_g: nutritionData.total_carbs_g,
       consumption_time: recoData.consumption_time,
       frequency: recoData.frequency,
       activities: recoData.activities,
-      health_note: nutritionData.food_items.some(f => f.warning) ? 'Some foods missing exact data.' : 'Calorie values are estimates based on local databases.',
+      health_note: nutritionData.food_items.some(f => f.warning)
+        ? 'Some items could not be estimated — try rephrasing them.'
+        : 'Calorie values are AI-estimated using Gemini. Results are approximate.',
       disclaimer: recoData.disclaimer,
     };
 
