@@ -11,6 +11,7 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [input, setInput] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -22,8 +23,24 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (input.trim() && !disabled) {
-      onSend(input.trim())
+    const cleanInput = input.trim()
+    
+    // Validation rules
+    if (!cleanInput) {
+      return
+    }
+    if (cleanInput.length < 3) {
+      setError("Please describe the food in a bit more detail (e.g. 'an apple').")
+      return
+    }
+    if (cleanInput.length > 200) {
+      setError("That's a lot of food! Please try breaking it down into smaller messages.")
+      return
+    }
+
+    if (!disabled) {
+      setError(null)
+      onSend(cleanInput)
       setInput('')
     }
   }
@@ -41,7 +58,10 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         <textarea
           ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value)
+            if (error) setError(null) // clear error on type
+          }}
           onKeyDown={handleKeyDown}
           placeholder="Tell me what you ate..."
           disabled={disabled}
@@ -58,6 +78,16 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           <span className="sr-only">Send message</span>
         </Button>
       </div>
+      
+      {/* Error Message */}
+      {error && (
+        <div className="absolute -top-10 left-0 right-0 flex justify-center animate-in fade-in slide-in-from-bottom-2 duration-300 z-10">
+          <div className="bg-destructive text-destructive-foreground text-xs px-3 py-1.5 rounded-lg shadow-md font-medium">
+            {error}
+          </div>
+        </div>
+      )}
+
       <p className="mt-2 text-center text-xs text-muted-foreground">
         CalorieAI provides estimates. Consult a professional for precise nutrition advice.
       </p>
