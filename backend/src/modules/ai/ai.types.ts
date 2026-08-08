@@ -14,5 +14,5 @@ export interface FoodExtractionResult {
   meal_type: 'light' | 'medium' | 'heavy';
   confidence: number;
   ambiguous: boolean;
-  source: 'mock' | 'openai' | 'gemini';
+  source: 'mock' | 'openai' | 'gemini' | 'openfoodfacts' | 'calorieapi';
 }

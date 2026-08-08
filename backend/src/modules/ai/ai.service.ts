@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FoodExtractionResult } from './ai.types';
+import axios from 'axios';
 
 export const extract = async (message: string): Promise<FoodExtractionResult> => {
   try {
@@ -59,22 +60,61 @@ User message: ${message}`;
 
     return { ...foodData, source: 'gemini' };
   } catch (error) {
-    console.error("❌ AI Service Error (Falling back to OpenFoodFacts API):", error.message);
+    console.error("❌ AI Service Error (Falling back to CalorieAPI/OpenFoodFacts):", error.message);
     
-    // NO API KEY REQUIRED - REAL LIVE DATA FALLBACK
+    // NO API KEY REQUIRED FOR OPENFOODFACTS - REAL LIVE DATA FALLBACK
     try {
       // Basic extraction of the core food term (ignoring filler words)
       const cleanMessage = message.toLowerCase()
         .replace(/i had|i ate|for lunch|for breakfast|for dinner|a piece of|a slice of|some/g, '')
         .trim();
       
+      const mockItems = [];
+      
+      // 1. Try CalorieAPI first
+      try {
+        const calorieApiKey = process.env.CALORIE_API_KEY;
+        if (calorieApiKey) {
+          const response = await axios.get(
+            `https://api.calorieapi.com/api/v1/search`,
+            {
+              params: { q: cleanMessage },
+              headers: { 'X-API-Key': calorieApiKey }
+            }
+          );
+
+          if (response.data && response.data.length > 0) {
+            const food = response.data[0];
+            mockItems.push({
+              name: food.name || cleanMessage,
+              quantity: parseFloat(food.serving_size) || 1,
+              unit: 'serving',
+              calories_min: Math.round((food.calories || 150) * 0.9),
+              calories_max: Math.round((food.calories || 150) * 1.1),
+              protein_g: Math.round(food.protein_g || 0),
+              fat_g: Math.round(food.fat_g || 0),
+              carbs_g: Math.round(food.carbohydrates_g || 0),
+            });
+            
+            return {
+              items: mockItems,
+              meal_type: 'medium',
+              confidence: 0.95,
+              ambiguous: false,
+              source: 'calorieapi'
+            };
+          }
+        }
+      } catch (calorieApiError: any) {
+        console.error('CalorieAPI error, falling through to OpenFoodFacts:', calorieApiError.message);
+      }
+
+      // 2. Fall back to OpenFoodFacts if CalorieAPI fails or returns no data
       const query = encodeURIComponent(cleanMessage);
       const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${query}&search_simple=1&action=process&json=1&page_size=1`;
       
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      const mockItems = [];
+      const response = await axios.get(url);
+      const data = response.data;
       
       if (data.products && data.products.length > 0) {
         const product = data.products[0];
