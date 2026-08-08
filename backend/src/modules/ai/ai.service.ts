@@ -59,7 +59,7 @@ User message: ${message}`;
     console.log("🧠 GEMINI OUTPUT:", JSON.stringify(foodData, null, 2));
 
     return { ...foodData, source: 'gemini' };
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ AI Service Error (Falling back to CalorieAPI/OpenFoodFacts):", error.message);
     
     // NO API KEY REQUIRED FOR OPENFOODFACTS - REAL LIVE DATA FALLBACK
