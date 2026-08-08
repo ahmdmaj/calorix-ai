@@ -3,6 +3,7 @@
 import { Bot, User, Activity } from 'lucide-react'
 import type { Message } from '@/lib/mock-data'
 import { NutritionCard } from '@/components/nutrition-card'
+import { FoodItemCard } from '@/components/food-item-card'
 
 interface ChatMessageProps {
   message: Message
@@ -48,6 +49,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
         
         {isAssistant && message.result && (
           <div className="mt-4 pt-2">
+            
+            {message.result.food_items && message.result.food_items.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                {message.result.food_items.map((item: any, idx: number) => (
+                  <FoodItemCard key={idx} item={item} />
+                ))}
+              </div>
+            )}
+
             <NutritionCard 
               totalMin={message.result.total_min} 
               totalMax={message.result.total_max}
