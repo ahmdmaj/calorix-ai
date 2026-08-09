@@ -3,8 +3,19 @@ import { extract } from './ai.service';
 import { CalorieNinjasService } from '../nutrition/calorie-ninjas.service';
 import * as nutritionModule from '../nutrition/nutrition.service';
 
-// Mock the CalorieNinjas service to avoid hitting the actual API
-jest.mock('../nutrition/calorie-ninjas.service');
+// We want to mock only queryNutrition but keep normalizeItem
+jest.mock('../nutrition/calorie-ninjas.service', () => {
+  const originalModule = jest.requireActual('../nutrition/calorie-ninjas.service') as any;
+  return {
+    __esModule: true,
+    ...originalModule,
+    CalorieNinjasService: {
+      ...originalModule.CalorieNinjasService,
+      queryNutrition: jest.fn(),
+      normalizeItem: originalModule.CalorieNinjasService.normalizeItem
+    },
+  };
+});
 
 describe('AI Service Extraction', () => {
   beforeEach(() => {
