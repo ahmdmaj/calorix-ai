@@ -108,11 +108,24 @@ export const mockChats: Chat[] = [
   },
 ]
 
+// Use a factory so every call gets a fresh Date — avoids stale module-level timestamp
+export function makeInitialMessages(): Message[] {
+  return [
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: "Hi! I'm your AI calorie tracking assistant. Tell me what you've eaten and I'll help you track your calories, provide nutritional insights, and keep you on track with your health goals.\n\nFor example, you can say:\n• \"I had a chicken sandwich for lunch\"\n• \"What's the calorie count of an avocado?\"\n• \"Give me my daily summary\"",
+      timestamp: new Date(),
+    },
+  ]
+}
+
+// Keep the export for any code that still uses it, but point it at a stable past time
 export const initialMessages: Message[] = [
   {
     id: 'welcome',
     role: 'assistant',
     content: "Hi! I'm your AI calorie tracking assistant. Tell me what you've eaten and I'll help you track your calories, provide nutritional insights, and keep you on track with your health goals.\n\nFor example, you can say:\n• \"I had a chicken sandwich for lunch\"\n• \"What's the calorie count of an avocado?\"\n• \"Give me my daily summary\"",
-    timestamp: new Date(),
+    timestamp: new Date('2026-08-09T00:00:00.000Z'),
   },
 ]

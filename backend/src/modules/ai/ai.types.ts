@@ -17,9 +17,10 @@ export interface NormalizedFoodNutrition {
   fatGrams: number | null;
   carbsGrams: number | null;
   fiberGrams: number | null;
-  source: 'calorie-ninjas' | 'open-food-facts' | 'manual' | 'unknown';
+  source: 'calorie-api' | 'calorie-ninjas' | 'open-food-facts' | 'manual' | 'unknown';
   verified?: boolean;
   confidence: 'high' | 'medium' | 'low';
+  failureReason?: string;
 }
 
 export type ChatResponseStatus = 'success' | 'needs_clarification' | 'error';

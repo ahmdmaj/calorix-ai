@@ -1,9 +1,8 @@
 import { FoodExtractionResult, NormalizedFoodNutrition, ParsedFoodItem, ChatResponseStatus } from './ai.types';
-import { CalorieNinjasService } from '../nutrition/calorie-ninjas.service';
+import { CalorieApiService } from '../nutrition/calorie-ninjas.service';
 
 /**
- * Very basic NLP to extract potential food items from a message.
- * In a real app, this might use an LLM or specialized NLP library.
+ * Parses the user's natural-language message into individual food items.
  */
 function parseUserMessage(message: string): ParsedFoodItem[] {
   // 1. Remove common filler phrases
@@ -21,22 +20,18 @@ function parseUserMessage(message: string): ParsedFoodItem[] {
     const text = part.trim();
     if (!text) continue;
 
-    // Simple heuristic for quantity: if it starts with a number (e.g. "2 eggs", "200g chicken")
     let quantity = 1;
     let unit = 'serving';
     let name = text;
 
+    // Match "2 eggs", "200g chicken", "2 slices bread"
     const qtyMatch = text.match(/^(\d+(?:\.\d+)?)\s*(g|oz|lb|cups?|slices?|pieces?)?\s+(.+)$/);
     if (qtyMatch) {
       quantity = parseFloat(qtyMatch[1]);
-      if (qtyMatch[2]) {
-        unit = qtyMatch[2];
-      } else {
-        unit = 'item';
-      }
+      unit = qtyMatch[2] || 'item';
       name = qtyMatch[3];
     } else {
-      // Check for 'a' or 'an' (e.g. "a banana")
+      // Match "a banana", "an egg"
       const aMatch = text.match(/^(?:a|an)\s+(.+)$/);
       if (aMatch) {
         quantity = 1;
@@ -49,17 +44,17 @@ function parseUserMessage(message: string): ParsedFoodItem[] {
       name: name.trim(),
       quantity,
       unit,
-      originalText: text, // The exact text we'll pass to CalorieNinjas since it understands natural language
+      originalText: text,
     });
   }
 
-  // Fallback if parsing fails to find anything
+  // Fallback if nothing was parsed
   if (parsedItems.length === 0) {
     parsedItems.push({
       name: message.trim(),
       quantity: 1,
       unit: 'serving',
-      originalText: message.trim()
+      originalText: message.trim(),
     });
   }
 
@@ -67,69 +62,48 @@ function parseUserMessage(message: string): ParsedFoodItem[] {
 }
 
 export const extract = async (message: string): Promise<FoodExtractionResult> => {
+  console.log('[AI] Input message:', message);
+
   try {
     const parsedItems = parseUserMessage(message);
+    console.log('[AI] Extracted items:', parsedItems.map((i) => i.name));
+
     const normalizedItems: NormalizedFoodNutrition[] = [];
-    
-    let hasError = false;
     let needsClarification = false;
 
-    // Process each item individually
+    // Process each food item independently via the Calorie API
     for (const item of parsedItems) {
-      // We pass the *original text* (e.g. "2 eggs") to CalorieNinjas because it does NLP itself
-      const cnItems = await CalorieNinjasService.queryNutrition(item.originalText);
-      
-      if (cnItems.length > 0) {
-        // Take the first match (the best match from API)
-        const normalized = CalorieNinjasService.normalizeItem(cnItems[0], item.originalText);
-        normalizedItems.push(normalized);
-        
-        if (normalized.calories === null) {
-          needsClarification = true;
-        }
-      } else {
-        // Completely unknown food
-        normalizedItems.push({
-          name: item.name,
-          quantity: item.quantity,
-          unit: item.unit,
-          calories: null,
-          proteinGrams: null,
-          fatGrams: null,
-          carbsGrams: null,
-          fiberGrams: null,
-          source: 'unknown',
-          confidence: 'low'
-        });
+      console.log('[AI] Looking up:', item.originalText);
+      const result = await CalorieApiService.lookupFood(item.originalText);
+      normalizedItems.push(result);
+
+      if (result.calories === null) {
         needsClarification = true;
       }
     }
 
+    // Determine overall status
     let status: ChatResponseStatus = 'success';
-    if (hasError) status = 'error';
-    else if (needsClarification) status = 'needs_clarification';
+    if (needsClarification) status = 'needs_clarification';
 
-    // Calculate approximate meal size for recommendations
+    // Classify meal size by total calories
     let meal_type: 'light' | 'medium' | 'heavy' = 'medium';
-    let totalCalories = 0;
-    
-    normalizedItems.forEach(item => {
-      if (item.calories) totalCalories += item.calories;
-    });
+    const totalCalories = normalizedItems.reduce((sum, item) => sum + (item.calories ?? 0), 0);
 
     if (totalCalories < 300) meal_type = 'light';
     else if (totalCalories > 800) meal_type = 'heavy';
 
-    // Confidence metric based on how many items were successfully parsed
-    const successCount = normalizedItems.filter(item => item.calories !== null).length;
+    const successCount = normalizedItems.filter((item) => item.calories !== null).length;
     const confidence = normalizedItems.length > 0 ? successCount / normalizedItems.length : 0;
+
+    console.log('[AI] Result:', { status, totalCalories, meal_type, confidence });
 
     return {
       items: normalizedItems,
       meal_type,
       confidence,
       ambiguous: needsClarification,
-      status
+      status,
     };
   } catch (error) {
     console.error('[AI Service Error]:', error);
@@ -138,7 +112,7 @@ export const extract = async (message: string): Promise<FoodExtractionResult> =>
       meal_type: 'medium',
       confidence: 0,
       ambiguous: true,
-      status: 'error'
+      status: 'error',
     };
   }
 };

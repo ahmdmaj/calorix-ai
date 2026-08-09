@@ -100,7 +100,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
             )}
           </div>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-2 text-xs text-muted-foreground" suppressHydrationWarning>
           {formatTime(message.timestamp)}
         </p>
       </div>

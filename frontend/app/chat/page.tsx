@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { ChatSidebar } from '@/components/chat-sidebar'
 import { ChatArea } from '@/components/chat-area'
-import { mockChats, initialMessages, type Message, type Chat } from '@/lib/mock-data'
+import { mockChats, makeInitialMessages, type Message, type Chat } from '@/lib/mock-data'
 import { apiClient } from '@/lib/api'
 
 // Sample AI responses for different types of queries
@@ -41,7 +41,7 @@ function getAIResponse(message: string): string {
 export default function ChatPage() {
   const [chats, setChats] = useState<Chat[]>(mockChats)
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
-  const [currentMessages, setCurrentMessages] = useState<Message[]>(initialMessages)
+  const [currentMessages, setCurrentMessages] = useState<Message[]>(() => makeInitialMessages())
   const [isLoading, setIsLoading] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
@@ -55,7 +55,7 @@ export default function ChatPage() {
 
   const handleNewChat = useCallback(() => {
     setActiveChatId(null)
-    setCurrentMessages(initialMessages)
+    setCurrentMessages(makeInitialMessages())
   }, [])
 
   const handleSendMessage = useCallback(async (content: string) => {

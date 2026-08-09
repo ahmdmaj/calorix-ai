@@ -67,7 +67,9 @@ export const lookup = async (items: NormalizedFoodNutrition[]): Promise<Nutritio
         fiber_g: null,
         source: item.source,
         confidence: item.confidence,
-        warning: `Could not reliably identify macros for '${item.name}'. Needs clarification.`,
+        warning: (item as any).failureReason
+          ? `Could not retrieve nutrition for '${item.name}' (${(item as any).failureReason}).`
+          : `Could not reliably identify macros for '${item.name}'.`,
       });
     }
   }
