@@ -2,9 +2,16 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IFoodItem {
   name: string;
-  calories_min: number;
-  calories_max: number;
+  quantity: number;
+  unit: string;
+  calories: number | null;
+  protein_g: number | null;
+  fat_g: number | null;
+  carbs_g: number | null;
+  fiber_g: number | null;
   source: string;
+  confidence: string;
+  warning?: string;
 }
 
 export interface IActivity {
@@ -16,11 +23,15 @@ export interface IChatResult {
   food_items: IFoodItem[];
   total_min: number;
   total_max: number;
+  total_protein_g: number;
+  total_fat_g: number;
+  total_carbs_g: number;
   consumption_time: string;
   frequency: string;
   activities: IActivity[];
   health_note: string;
   disclaimer: string;
+  status: 'success' | 'needs_clarification' | 'error';
 }
 
 export interface IChat extends Document {
@@ -37,13 +48,23 @@ const chatSchema = new Schema<IChat>({
     food_items: [
       {
         name: { type: String, required: true },
-        calories_min: { type: Number, required: true },
-        calories_max: { type: Number, required: true },
+        quantity: { type: Number, required: true },
+        unit: { type: String, required: true },
+        calories: { type: Number, required: false },
+        protein_g: { type: Number, required: false },
+        fat_g: { type: Number, required: false },
+        carbs_g: { type: Number, required: false },
+        fiber_g: { type: Number, required: false },
         source: { type: String, required: true },
+        confidence: { type: String, required: true },
+        warning: { type: String, required: false },
       },
     ],
     total_min: { type: Number, required: true },
     total_max: { type: Number, required: true },
+    total_protein_g: { type: Number, required: true },
+    total_fat_g: { type: Number, required: true },
+    total_carbs_g: { type: Number, required: true },
     consumption_time: { type: String, required: true },
     frequency: { type: String, required: true },
     activities: [
@@ -54,6 +75,7 @@ const chatSchema = new Schema<IChat>({
     ],
     health_note: { type: String, required: true },
     disclaimer: { type: String, required: true },
+    status: { type: String, enum: ['success', 'needs_clarification', 'error'], required: true },
   },
   created_at: { type: Date, default: Date.now },
 });

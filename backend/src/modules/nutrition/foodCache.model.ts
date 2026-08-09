@@ -8,16 +8,20 @@ export interface IMacros {
 
 export interface IFoodCache extends Document {
   query: string;
+  food_query: string;
   calories_min: number;
   calories_max: number;
   macros: IMacros;
-  source: 'edamam' | 'local_db';
+  source: 'edamam' | 'local_db' | 'calorie-ninjas';
   is_local: boolean;
+  confidence: string;
+  is_estimated: boolean;
   fetched_at: Date;
 }
 
 const foodCacheSchema = new Schema<IFoodCache>({
   query: { type: String, required: true, unique: true, lowercase: true },
+  food_query: { type: String, required: false },
   calories_min: { type: Number, required: true },
   calories_max: { type: Number, required: true },
   macros: {
@@ -25,8 +29,10 @@ const foodCacheSchema = new Schema<IFoodCache>({
     fat_g: { type: Number, required: true },
     carbs_g: { type: Number, required: true },
   },
-  source: { type: String, enum: ['edamam', 'local_db'], required: true },
+  source: { type: String, enum: ['edamam', 'local_db', 'calorie-ninjas'], required: true },
   is_local: { type: Boolean, required: true },
+  confidence: { type: String, required: false },
+  is_estimated: { type: Boolean, required: false, default: false },
   fetched_at: { type: Date, default: Date.now },
 });
 

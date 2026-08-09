@@ -1,18 +1,33 @@
-export interface FoodExtractionItem {
+export interface ParsedFoodItem {
   name: string;
   quantity: number;
   unit: string;
-  calories_min: number;
-  calories_max: number;
-  protein_g?: number;
-  fat_g?: number;
-  carbs_g?: number;
+  originalText: string;
 }
 
+export interface NormalizedFoodNutrition {
+  foodId?: string | number;
+  name: string;
+  brand?: string;
+  quantity: number;
+  unit: string;
+  grams?: number;
+  calories: number | null;
+  proteinGrams: number | null;
+  fatGrams: number | null;
+  carbsGrams: number | null;
+  fiberGrams: number | null;
+  source: 'calorie-ninjas' | 'open-food-facts' | 'manual' | 'unknown';
+  verified?: boolean;
+  confidence: 'high' | 'medium' | 'low';
+}
+
+export type ChatResponseStatus = 'success' | 'needs_clarification' | 'error';
+
 export interface FoodExtractionResult {
-  items: FoodExtractionItem[];
+  items: NormalizedFoodNutrition[];
   meal_type: 'light' | 'medium' | 'heavy';
   confidence: number;
   ambiguous: boolean;
-  source: 'mock' | 'openai' | 'gemini' | 'openfoodfacts' | 'calorieapi';
+  status: ChatResponseStatus;
 }
