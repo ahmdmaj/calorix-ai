@@ -1,3 +1,4 @@
+import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { extract } from './ai.service';
 import { CalorieNinjasService } from '../nutrition/calorie-ninjas.service';
 import * as nutritionModule from '../nutrition/nutrition.service';
@@ -78,7 +79,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('3. should extract "I had 2 eggs and 2 slices of toast" correctly', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockImplementation((query) => {
+    (CalorieNinjasService.queryNutrition as jest.Mock).mockImplementation((query: string) => {
       if (query.includes('egg')) return Promise.resolve([mockEggResult]);
       if (query.includes('toast')) return Promise.resolve([mockToastResult]);
       return Promise.resolve([]);
@@ -191,7 +192,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('15. should correctly aggregate calories and all three macros', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockImplementation((query) => {
+    (CalorieNinjasService.queryNutrition as jest.Mock).mockImplementation((query: string) => {
       if (query.includes('egg')) return Promise.resolve([mockEggResult]);
       if (query.includes('toast')) return Promise.resolve([mockToastResult]);
       return Promise.resolve([]);
