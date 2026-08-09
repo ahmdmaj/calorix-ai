@@ -58,7 +58,7 @@ describe('AI Service Extraction', () => {
 
   it('1. should extract "I had 2 eggs" correctly', async () => {
     // Setup mock
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([mockEggResult]);
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([mockEggResult]);
 
     const result = await extract("I had 2 eggs");
 
@@ -69,7 +69,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('2. should extract "I ate 200g chicken breast" correctly', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([mockChickenResult]);
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([mockChickenResult]);
 
     const result = await extract("I ate 200g chicken breast");
 
@@ -79,7 +79,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('3. should extract "I had 2 eggs and 2 slices of toast" correctly', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockImplementation((query: string) => {
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockImplementation((query: string) => {
       if (query.includes('egg')) return Promise.resolve([mockEggResult]);
       if (query.includes('toast')) return Promise.resolve([mockToastResult]);
       return Promise.resolve([]);
@@ -94,7 +94,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('4. should handle "I ate a banana"', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([{
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([{
       name: 'banana',
       calories: 89,
       serving_size_g: 100,
@@ -117,7 +117,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('5. should handle branded packaged food', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([{
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([{
       name: 'oreo',
       calories: 479,
       serving_size_g: 100,
@@ -140,7 +140,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('6. should handle an unknown food', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([]);
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([]);
 
     const result = await extract("I ate a weird alien fruit");
 
@@ -150,7 +150,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('7. should handle a food with no search results', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([]);
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([]);
 
     const result = await extract("dsfdsfdsf");
 
@@ -160,7 +160,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('8. should handle a food with missing macro fields', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([{
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([{
       name: 'broken food',
       calories: 100,
       serving_size_g: 100,
@@ -183,7 +183,7 @@ describe('AI Service Extraction', () => {
       protein_g: 25.2 // 12.6 * 2
     };
 
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockResolvedValue([queryResult]);
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([queryResult]);
 
     const result = await extract("2 eggs");
 
@@ -192,7 +192,7 @@ describe('AI Service Extraction', () => {
   });
 
   it('15. should correctly aggregate calories and all three macros', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock).mockImplementation((query: string) => {
+    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockImplementation((query: string) => {
       if (query.includes('egg')) return Promise.resolve([mockEggResult]);
       if (query.includes('toast')) return Promise.resolve([mockToastResult]);
       return Promise.resolve([]);
