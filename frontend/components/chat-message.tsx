@@ -50,6 +50,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
         {isAssistant && message.result && (
           <div className="mt-4 pt-2">
             
+            {message.result.status === 'needs_clarification' && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4">
+                <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mb-1">Clarification Needed</p>
+                <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                  I couldn't accurately identify all the items or their quantities. Please provide more details.
+                </p>
+              </div>
+            )}
+
             {message.result.food_items && message.result.food_items.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 {message.result.food_items.map((item: any, idx: number) => (
@@ -58,13 +67,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
               </div>
             )}
 
-            <NutritionCard 
-              totalMin={message.result.total_min} 
-              totalMax={message.result.total_max}
-              proteinG={message.result.total_protein_g || 0}
-              fatG={message.result.total_fat_g || 0}
-              carbsG={message.result.total_carbs_g || 0}
-            />
+            {message.result.status === 'success' && (
+              <NutritionCard 
+                totalMin={message.result.total_min} 
+                totalMax={message.result.total_max}
+                proteinG={message.result.total_protein_g || 0}
+                fatG={message.result.total_fat_g || 0}
+                carbsG={message.result.total_carbs_g || 0}
+              />
+            )}
             
             {message.result.activities && message.result.activities.length > 0 && (
               <div className="mt-4 bg-secondary/40 rounded-lg p-3 text-sm animate-in fade-in duration-700 delay-300">
