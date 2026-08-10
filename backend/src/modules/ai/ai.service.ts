@@ -24,8 +24,8 @@ function parseUserMessage(message: string): ParsedFoodItem[] {
     let unit = 'serving';
     let name = text;
 
-    // Match "2 eggs", "200g chicken", "2 slices bread"
-    const qtyMatch = text.match(/^(\d+(?:\.\d+)?)\s*(g|oz|lb|cups?|slices?|pieces?)?\s+(.+)$/);
+    // Match "200g chicken", "2 eggs", "2 slices bread" etc.
+    const qtyMatch = text.match(/^(\d+(?:\.\d+)?)\s*(g|grams?|kg|oz|lb|lbs?|cups?|slices?|pieces?|ml)?\s+(.+)$/i);
     if (qtyMatch) {
       quantity = parseFloat(qtyMatch[1]);
       unit = qtyMatch[2] || 'item';
@@ -61,20 +61,53 @@ function parseUserMessage(message: string): ParsedFoodItem[] {
   return parsedItems;
 }
 
+/**
+ * Converts a parsed quantity + unit to grams.
+ * Returns { grams, quantitySpecified }.
+ *   - quantitySpecified = true  → user gave an explicit weight (g/kg/oz/lb)
+ *   - quantitySpecified = false → no weight given; we'll default to 100g
+ */
+function toGrams(quantity: number, unit: string): { grams: number; quantitySpecified: boolean } {
+  const u = unit.toLowerCase().replace(/s$/, ''); // normalise plural
+
+  switch (u) {
+    case 'g':
+    case 'gram':
+      return { grams: quantity, quantitySpecified: true };
+
+    case 'kg':
+      return { grams: quantity * 1000, quantitySpecified: true };
+
+    case 'oz':
+      return { grams: Math.round(quantity * 28.3495), quantitySpecified: true };
+
+    case 'lb':
+      return { grams: Math.round(quantity * 453.592), quantitySpecified: true };
+
+    // Non-weight units (item, serving, slice, cup…) — fall back to 100g default
+    default:
+      return { grams: 100, quantitySpecified: false };
+  }
+}
+
 export const extract = async (message: string): Promise<FoodExtractionResult> => {
   console.log('[AI] Input message:', message);
 
   try {
     const parsedItems = parseUserMessage(message);
-    console.log('[AI] Extracted items:', parsedItems.map((i) => i.name));
+    console.log('[AI] Extracted items:', parsedItems.map((i) => `${i.quantity} ${i.unit} ${i.name}`));
 
     const normalizedItems: NormalizedFoodNutrition[] = [];
     let needsClarification = false;
 
     // Process each food item independently via the Calorie API
     for (const item of parsedItems) {
-      console.log('[AI] Looking up:', item.originalText);
-      const result = await CalorieApiService.lookupFood(item.originalText);
+      const { grams, quantitySpecified } = toGrams(item.quantity, item.unit);
+
+      console.log('[AI] Looking up:', item.name, '| grams:', grams, '| quantitySpecified:', quantitySpecified);
+
+      // Send only the food NAME to the search API — no quantities in the query
+      const result = await CalorieApiService.lookupFood(item.name, grams, quantitySpecified);
       normalizedItems.push(result);
 
       if (result.calories === null) {
