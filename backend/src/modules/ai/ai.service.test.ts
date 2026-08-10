@@ -1,222 +1,223 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { extract } from './ai.service';
-import { CalorieNinjasService } from '../nutrition/calorie-ninjas.service';
+import { CalorieApiService } from '../nutrition/calorie-ninjas.service';
 import * as nutritionModule from '../nutrition/nutrition.service';
 
-// We want to mock only queryNutrition but keep normalizeItem
-jest.mock('../nutrition/calorie-ninjas.service', () => {
-  const originalModule = jest.requireActual('../nutrition/calorie-ninjas.service') as any;
-  return {
-    __esModule: true,
-    ...originalModule,
-    CalorieNinjasService: {
-      ...originalModule.CalorieNinjasService,
-      queryNutrition: jest.fn(),
-      normalizeItem: originalModule.CalorieNinjasService.normalizeItem
-    },
-  };
+// Mock the entire CalorieApiService.lookupFood method
+jest.mock('../nutrition/calorie-ninjas.service', () => ({
+  CalorieApiService: {
+    lookupFood: jest.fn(),
+  },
+}));
+
+// ─── Shared mock helpers ───────────────────────────────────────────────────────
+
+const makeFood = (name: string, calories: number, protein: number, fat: number, carbs: number, fiber = 0) => ({
+  foodId: 1000,
+  name,
+  quantity: 1,
+  unit: '1 Serving',
+  grams: 100,
+  calories,
+  proteinGrams: protein,
+  fatGrams: fat,
+  carbsGrams: carbs,
+  fiberGrams: fiber,
+  source: 'calorie-api' as const,
+  confidence: 'high' as const,
+  verified: true,
 });
+
+const unknownFood = (name: string, reason = 'no_search_results') => ({
+  name,
+  quantity: 1,
+  unit: 'serving',
+  calories: null,
+  proteinGrams: null,
+  fatGrams: null,
+  carbsGrams: null,
+  fiberGrams: null,
+  source: 'unknown' as const,
+  confidence: 'low' as const,
+  failureReason: reason,
+});
+
+const mockLookup = CalorieApiService.lookupFood as jest.MockedFunction<typeof CalorieApiService.lookupFood>;
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('AI Service Extraction', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  const mockEggResult = {
-    name: 'egg',
-    calories: 143,
-    serving_size_g: 100,
-    fat_total_g: 9.5,
-    fat_saturated_g: 3.1,
-    protein_g: 12.6,
-    sodium_mg: 140,
-    potassium_mg: 138,
-    cholesterol_mg: 372,
-    carbohydrates_total_g: 0.7,
-    fiber_g: 0,
-    sugar_g: 0.4
-  };
+  it('1. should look up pancakes and return calories', async () => {
+    mockLookup.mockResolvedValue(makeFood('Pancakes', 227, 5.9, 7.6, 35.2, 1.5));
 
-  const mockChickenResult = {
-    name: 'chicken breast',
-    calories: 165,
-    serving_size_g: 100,
-    fat_total_g: 3.6,
-    fat_saturated_g: 1,
-    protein_g: 31,
-    sodium_mg: 74,
-    potassium_mg: 256,
-    cholesterol_mg: 85,
-    carbohydrates_total_g: 0,
-    fiber_g: 0,
-    sugar_g: 0
-  };
+    const result = await extract('I had pancakes');
 
-  const mockToastResult = {
-    name: 'toast',
-    calories: 313,
-    serving_size_g: 100,
-    fat_total_g: 4.3,
-    fat_saturated_g: 0.9,
-    protein_g: 12.9,
-    sodium_mg: 601,
-    potassium_mg: 153,
-    cholesterol_mg: 0,
-    carbohydrates_total_g: 55.8,
-    fiber_g: 4.4,
-    sugar_g: 5.4
-  };
-
-  it('1. should extract "I had 2 eggs" correctly', async () => {
-    // Setup mock
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([mockEggResult]);
-
-    const result = await extract("I had 2 eggs");
-
-    expect(result.items.length).toBe(1);
-    expect(result.items[0].name).toBe('egg');
-    expect(result.items[0].calories).toBe(143); // Handled by mocked normalizeItem, actually the app uses Math.round
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].name).toBe('Pancakes');
+    expect(result.items[0].calories).toBe(227);
+    expect(result.items[0].proteinGrams).toBe(5.9);
+    expect(result.items[0].fatGrams).toBe(7.6);
+    expect(result.items[0].carbsGrams).toBe(35.2);
     expect(result.status).toBe('success');
   });
 
-  it('2. should extract "I ate 200g chicken breast" correctly', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([mockChickenResult]);
+  it('2. should look up syrup and return calories', async () => {
+    mockLookup.mockResolvedValue(makeFood('Maple Syrup', 261, 0, 0.1, 67.2));
 
-    const result = await extract("I ate 200g chicken breast");
+    const result = await extract('syrup');
 
-    expect(result.items.length).toBe(1);
-    expect(result.items[0].name).toBe('chicken breast');
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].calories).toBe(261);
     expect(result.status).toBe('success');
   });
 
-  it('3. should extract "I had 2 eggs and 2 slices of toast" correctly', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockImplementation((query: string) => {
-      if (query.includes('egg')) return Promise.resolve([mockEggResult]);
-      if (query.includes('toast')) return Promise.resolve([mockToastResult]);
-      return Promise.resolve([]);
-    });
+  it('3. should look up banana and return calories', async () => {
+    mockLookup.mockResolvedValue(makeFood('Banana', 89, 1.1, 0.3, 22.8, 2.6));
 
-    const result = await extract("I had 2 eggs and 2 slices of toast");
+    const result = await extract('I ate a banana');
 
-    expect(result.items.length).toBe(2);
-    expect(result.items[0].name).toBe('egg');
-    expect(result.items[1].name).toBe('toast');
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].name).toBe('Banana');
+    expect(result.items[0].calories).toBe(89);
     expect(result.status).toBe('success');
   });
 
-  it('4. should handle "I ate a banana"', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([{
-      name: 'banana',
-      calories: 89,
-      serving_size_g: 100,
-      fat_total_g: 0.3,
-      fat_saturated_g: 0.1,
-      protein_g: 1.1,
-      sodium_mg: 1,
-      potassium_mg: 358,
-      cholesterol_mg: 0,
-      carbohydrates_total_g: 22.8,
-      fiber_g: 2.6,
-      sugar_g: 12.2
-    }]);
+  it('4. should look up boiled egg and return calories', async () => {
+    mockLookup.mockResolvedValue(makeFood('Boiled Egg', 78, 6.3, 5.3, 0.6, 0));
 
-    const result = await extract("I ate a banana");
+    const result = await extract('boiled egg');
 
-    expect(result.items.length).toBe(1);
-    expect(result.items[0].name).toBe('banana');
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].calories).toBe(78);
     expect(result.status).toBe('success');
   });
 
-  it('5. should handle branded packaged food', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([{
-      name: 'oreo',
-      calories: 479,
-      serving_size_g: 100,
-      fat_total_g: 20,
-      fat_saturated_g: 5.7,
-      protein_g: 4.8,
-      sodium_mg: 382,
-      potassium_mg: 172,
-      cholesterol_mg: 0,
-      carbohydrates_total_g: 69.4,
-      fiber_g: 2.7,
-      sugar_g: 38.1
-    }]);
+  it('5. should handle multiple food items (pancakes with syrup)', async () => {
+    mockLookup
+      .mockResolvedValueOnce(makeFood('Pancakes', 227, 5.9, 7.6, 35.2))
+      .mockResolvedValueOnce(makeFood('Maple Syrup', 261, 0, 0.1, 67.2));
 
-    const result = await extract("I ate 2 oreos");
+    const result = await extract('I had pancakes with syrup');
 
-    expect(result.items.length).toBe(1);
-    expect(result.items[0].name).toBe('oreo');
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].name).toBe('Pancakes');
+    expect(result.items[1].name).toBe('Maple Syrup');
+    expect(result.items[0].calories).toBe(227);
+    expect(result.items[1].calories).toBe(261);
     expect(result.status).toBe('success');
   });
 
-  it('6. should handle an unknown food', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([]);
+  it('6. should return needs_clarification when API returns no results', async () => {
+    mockLookup.mockResolvedValue(unknownFood('weird alien fruit'));
 
-    const result = await extract("I ate a weird alien fruit");
+    const result = await extract('weird alien fruit');
 
-    expect(result.items.length).toBe(1);
+    expect(result.items).toHaveLength(1);
     expect(result.items[0].calories).toBeNull();
     expect(result.status).toBe('needs_clarification');
   });
 
-  it('7. should handle a food with no search results', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([]);
+  it('7. should handle invalid API key (api_unauthorized)', async () => {
+    mockLookup.mockResolvedValue(unknownFood('pancakes', 'api_unauthorized'));
 
-    const result = await extract("dsfdsfdsf");
+    const result = await extract('pancakes');
 
-    expect(result.items.length).toBe(1);
     expect(result.items[0].calories).toBeNull();
+    expect((result.items[0] as any).failureReason).toBe('api_unauthorized');
     expect(result.status).toBe('needs_clarification');
   });
 
-  it('8. should handle a food with missing macro fields', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([{
-      name: 'broken food',
-      calories: 100,
-      serving_size_g: 100,
-      // Missing other macros
-    }]);
+  it('8. should handle rate limit (api_rate_limited)', async () => {
+    mockLookup.mockResolvedValue(unknownFood('banana', 'api_rate_limited'));
 
-    const result = await extract("broken food");
+    const result = await extract('banana');
 
-    expect(result.items.length).toBe(1);
     expect(result.items[0].calories).toBeNull();
+    expect((result.items[0] as any).failureReason).toBe('api_rate_limited');
+  });
+
+  it('9. should handle timeout (request_timeout)', async () => {
+    mockLookup.mockResolvedValue(unknownFood('egg', 'request_timeout'));
+
+    const result = await extract('egg');
+
+    expect(result.items[0].calories).toBeNull();
+    expect((result.items[0] as any).failureReason).toBe('request_timeout');
+  });
+
+  it('10. should handle malformed API response (invalid_response_shape)', async () => {
+    mockLookup.mockResolvedValue(unknownFood('apple', 'invalid_response_shape'));
+
+    const result = await extract('apple');
+
+    expect(result.items[0].calories).toBeNull();
+    expect((result.items[0] as any).failureReason).toBe('invalid_response_shape');
+  });
+
+  it('11. should handle missing protein → needs_clarification', async () => {
+    mockLookup.mockResolvedValue(unknownFood('mystery dish', 'nutrition_fields_missing'));
+
+    const result = await extract('mystery dish');
+
+    expect(result.items[0].proteinGrams).toBeNull();
     expect(result.status).toBe('needs_clarification');
   });
 
-  it('14. should scale quantity based on serving', async () => {
-    // CalorieNinjas automatically scales based on the query text "2 eggs".
-    // We just verify our normalization doesn't mess with it.
-    const queryResult = {
-      ...mockEggResult,
-      calories: 286, // 143 * 2
-      protein_g: 25.2 // 12.6 * 2
-    };
+  it('12. should handle missing fat → needs_clarification', async () => {
+    mockLookup.mockResolvedValue(unknownFood('mystery dish', 'nutrition_fields_missing'));
 
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockResolvedValue([queryResult]);
+    const result = await extract('mystery dish');
 
-    const result = await extract("2 eggs");
-
-    expect(result.items[0].calories).toBe(286);
-    expect(result.items[0].proteinGrams).toBe(25.2);
+    expect(result.items[0].fatGrams).toBeNull();
+    expect(result.status).toBe('needs_clarification');
   });
 
-  it('15. should correctly aggregate calories and all three macros', async () => {
-    (CalorieNinjasService.queryNutrition as jest.Mock<any>).mockImplementation((query: string) => {
-      if (query.includes('egg')) return Promise.resolve([mockEggResult]);
-      if (query.includes('toast')) return Promise.resolve([mockToastResult]);
-      return Promise.resolve([]);
-    });
+  it('13. should handle missing carbs → needs_clarification', async () => {
+    mockLookup.mockResolvedValue(unknownFood('mystery dish', 'nutrition_fields_missing'));
 
-    const extraction = await extract("1 egg and 1 toast");
-    
-    // Test the nutrition module lookup
+    const result = await extract('mystery dish');
+
+    expect(result.items[0].carbsGrams).toBeNull();
+    expect(result.status).toBe('needs_clarification');
+  });
+
+  it('14. should correctly aggregate calories and macros across items', async () => {
+    mockLookup
+      .mockResolvedValueOnce(makeFood('Pancakes', 227, 5.9, 7.6, 35.2))
+      .mockResolvedValueOnce(makeFood('Maple Syrup', 261, 0, 0.1, 67.2));
+
+    const extraction = await extract('pancakes with syrup');
     const nutrition = await nutritionModule.lookup(extraction.items);
 
-    expect(nutrition.total_max).toBe(143 + 313);
-    expect(nutrition.total_protein_g).toBe(12.6 + 12.9);
-    expect(nutrition.total_fat_g).toBe(9.5 + 4.3);
-    expect(nutrition.total_carbs_g).toBe(0.7 + 55.8);
+    expect(nutrition.total_min).toBeCloseTo(227 + 261, 0);
+    expect(nutrition.total_protein_g).toBeCloseTo(5.9 + 0, 1);
+    expect(nutrition.total_fat_g).toBeCloseTo(7.6 + 0.1, 1);
+    expect(nutrition.total_carbs_g).toBeCloseTo(35.2 + 67.2, 1);
+  });
+
+  it('15. should never use a hardcoded 300 kcal fallback', async () => {
+    mockLookup.mockResolvedValue(unknownFood('unknown food'));
+
+    const result = await extract('unknown food');
+    const nutrition = await nutritionModule.lookup(result.items);
+
+    // If a food fails, its calories must be null — never silently filled with 300
+    expect(result.items[0].calories).toBeNull();
+    expect(nutrition.total_min).toBe(0);
+    expect(nutrition.total_max).toBe(0);
+  });
+
+  it('16. should not convert missing macros to zero', async () => {
+    mockLookup.mockResolvedValue(unknownFood('ghost food', 'no_search_results'));
+
+    const result = await extract('ghost food');
+
+    expect(result.items[0].proteinGrams).toBeNull();
+    expect(result.items[0].fatGrams).toBeNull();
+    expect(result.items[0].carbsGrams).toBeNull();
   });
 });
