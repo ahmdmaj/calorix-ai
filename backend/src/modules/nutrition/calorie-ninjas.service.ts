@@ -46,12 +46,18 @@ export class CalorieApiService {
 
   /**
    * Searches for a food item by name and returns normalized nutrition data.
-   * Uses the meal.macros sub-object which is already scaled to the default serving size.
+   * @param query   - The food name (already stripped of quantity/unit by the caller)
+   * @param requestedGrams - How many grams the user asked for (defaults to 100 if not specified)
+   * @param quantitySpecified - Whether the user explicitly stated a quantity/weight
    */
-  static async lookupFood(query: string): Promise<NormalizedFoodNutrition> {
+  static async lookupFood(
+    query: string,
+    requestedGrams = 100,
+    quantitySpecified = false,
+  ): Promise<NormalizedFoodNutrition> {
     const apiKey = this.apiKey;
 
-    console.log('[CalorieAPI] API key exists:', Boolean(apiKey), '| query:', query);
+    console.log('[CalorieAPI] API key exists:', Boolean(apiKey), '| query:', query, '| requestedGrams:', requestedGrams);
 
     if (!apiKey) {
       console.error('[CalorieAPI] FOOD_CALORIE_API_KEY is not set');
@@ -107,55 +113,99 @@ export class CalorieApiService {
     const best = searchResults.find((f) => f.is_verified) ?? searchResults[0];
     console.log('[CalorieAPI] Best match:', best.name, '| id:', best.id);
 
-    return this.normalizeFood(best, query);
+    return this.normalizeFood(best, query, requestedGrams, quantitySpecified);
   }
 
   /**
    * Converts a raw search result food into NormalizedFoodNutrition.
-   * Prefers `meal.macros` (pre-scaled to default serving) over per-100g values.
+   *
+   * Strategy:
+   *   - Always scale from the API's per-100g values for accuracy.
+   *   - If the user specified a weight (e.g. "100g"), use that exact weight.
+   *   - If no weight was given, default to 100 g so the response is always
+   *     for a well-defined, consistent portion.
    */
-  private static normalizeFood(food: CalorieApiSearchFood, originalQuery: string): NormalizedFoodNutrition {
-    const meal = food.meal;
-
+  private static normalizeFood(
+    food: CalorieApiSearchFood,
+    originalQuery: string,
+    requestedGrams = 100,
+    quantitySpecified = false,
+  ): NormalizedFoodNutrition {
     const toNum = (v: unknown): number | null => {
       if (v === null || v === undefined || v === '') return null;
       const n = Number(v);
       return Number.isFinite(n) ? n : null;
     };
 
-    // Use meal.macros which are already scaled to the default serving size
-    const calories = toNum(meal?.calories);
-    const protein  = toNum(meal?.macros?.protein);
-    const fat      = toNum(meal?.macros?.fat);
-    const carbs    = toNum(meal?.macros?.carbs);
-    const fiber    = toNum(meal?.macros?.fiber);
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+
+    // Prefer per-100g fields — they are always precise regardless of serving size.
+    const cal100g     = toNum(food.calories_100g);
+    const protein100g = toNum(food.protein_100g);
+    const fat100g     = toNum(food.fat_100g);
+    const carbs100g   = toNum(food.carbs_100g);
+    const fiber100g   = toNum(food.fiber_100g);
+
+    // Check if per-100g data is available
+    const hasPer100g = cal100g !== null && protein100g !== null && fat100g !== null && carbs100g !== null;
+
+    let calories: number | null;
+    let protein: number | null;
+    let fat: number | null;
+    let carbs: number | null;
+    let fiber: number | null;
+    let resolvedGrams: number;
+    let unitLabel: string;
+
+    if (hasPer100g) {
+      // Scale per-100g values to the requested grams
+      const factor = requestedGrams / 100;
+      calories = round1(cal100g! * factor);
+      protein  = round1(protein100g! * factor);
+      fat      = round1(fat100g! * factor);
+      carbs    = round1(carbs100g! * factor);
+      fiber    = fiber100g !== null ? round1(fiber100g * factor) : null;
+      resolvedGrams = requestedGrams;
+      unitLabel = `${requestedGrams}g`;
+    } else {
+      // Fallback: use meal.macros (default serving) when no per-100g data
+      const meal = food.meal;
+      calories = toNum(meal?.calories);
+      protein  = toNum(meal?.macros?.protein);
+      fat      = toNum(meal?.macros?.fat);
+      carbs    = toNum(meal?.macros?.carbs);
+      fiber    = toNum(meal?.macros?.fiber);
+      resolvedGrams = food.serving_size ?? requestedGrams;
+      unitLabel = food.serving || 'serving';
+    }
 
     if (calories === null || protein === null || fat === null || carbs === null) {
       console.warn('[CalorieAPI] Missing macros for food:', food.name, { calories, protein, fat, carbs });
       return this.unknownFood(originalQuery, 'nutrition_fields_missing');
     }
 
-    const round1 = (n: number) => Math.round(n * 10) / 10;
-
     console.log('[CalorieAPI] Normalized:', {
       name: food.name,
-      calories: round1(calories),
-      protein: round1(protein),
-      fat: round1(fat),
-      carbs: round1(carbs),
+      requestedGrams,
+      resolvedGrams,
+      quantitySpecified,
+      calories,
+      protein,
+      fat,
+      carbs,
     });
 
     return {
       foodId: food.id,
       name: food.name,
-      quantity: 1,
-      unit: food.serving || 'serving',
-      grams: food.serving_size,
-      calories: round1(calories),
-      proteinGrams: round1(protein),
-      fatGrams: round1(fat),
-      carbsGrams: round1(carbs),
-      fiberGrams: fiber !== null ? round1(fiber) : null,
+      quantity: resolvedGrams,
+      unit: unitLabel,
+      grams: resolvedGrams,
+      calories,
+      proteinGrams: protein,
+      fatGrams: fat,
+      carbsGrams: carbs,
+      fiberGrams: fiber,
       source: 'calorie-api',
       confidence: food.is_verified ? 'high' : 'medium',
       verified: food.is_verified,
