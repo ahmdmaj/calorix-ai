@@ -80,7 +80,7 @@ const chatSchema = new Schema<IChat>({
   created_at: { type: Date, default: Date.now },
 });
 
-// TTL Index: expire after 90 days (7776000 seconds)
-chatSchema.index({ created_at: 1 }, { expireAfterSeconds: 7776000 });
+// TTL Index: expire after 7 days (604800 seconds)
+chatSchema.index({ created_at: 1 }, { expireAfterSeconds: 604800 });
 
 export const Chat = mongoose.model<IChat>('Chat', chatSchema);

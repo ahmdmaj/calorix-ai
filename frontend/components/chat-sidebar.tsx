@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, MessageSquare, Settings, LogOut, X, Activity } from 'lucide-react'
+import { Plus, MessageSquare, Settings, LogOut, X, Activity, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,10 @@ interface ChatSidebarProps {
   activeChatId: string | null
   onSelectChat: (chatId: string) => void
   onNewChat: () => void
+  onDeleteChat: (chatId: string) => void
   isOpen: boolean
   onClose: () => void
+  isHistoryLoading?: boolean
 }
 
 export function ChatSidebar({
@@ -20,8 +22,10 @@ export function ChatSidebar({
   activeChatId,
   onSelectChat,
   onNewChat,
+  onDeleteChat,
   isOpen,
   onClose,
+  isHistoryLoading = false,
 }: ChatSidebarProps) {
   const formatDate = (date: Date) => {
     const now = new Date()
@@ -101,37 +105,69 @@ export function ChatSidebar({
 
         {/* Chat List */}
         <div className="flex-1 overflow-y-auto px-2">
-          {Object.entries(groupedChats).map(([dateLabel, dateChats]) => (
-            <div key={dateLabel} className="mb-4">
-              <p className="mb-2 px-2 text-xs font-medium text-sidebar-foreground/60">
-                {dateLabel}
-              </p>
-              <div className="space-y-1">
-                {dateChats.map((chat) => (
-                  <button
-                    key={chat.id}
-                    onClick={() => {
-                      onSelectChat(chat.id)
-                      onClose()
-                    }}
-                    className={`group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors ${
-                      activeChatId === chat.id
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                    }`}
-                  >
-                    <MessageSquare className="mt-0.5 h-4 w-4 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{chat.title}</p>
-                      <p className="truncate text-xs text-sidebar-foreground/60">
-                        {chat.lastMessage}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+          {isHistoryLoading ? (
+            // Skeleton loading state
+            <div className="space-y-2 px-2 pt-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse rounded-lg p-3 bg-sidebar-accent/30">
+                  <div className="h-3 w-3/4 rounded bg-sidebar-border mb-2" />
+                  <div className="h-2 w-1/2 rounded bg-sidebar-border/60" />
+                </div>
+              ))}
             </div>
-          ))}
+          ) : chats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 text-sidebar-foreground/40 text-sm gap-2">
+              <MessageSquare className="h-8 w-8 opacity-40" />
+              <p>No chat history yet</p>
+              <p className="text-xs text-center px-4">Start a new conversation to track your calories</p>
+            </div>
+          ) : (
+            Object.entries(groupedChats).map(([dateLabel, dateChats]) => (
+              <div key={dateLabel} className="mb-4">
+                <p className="mb-2 px-2 text-xs font-medium text-sidebar-foreground/60">
+                  {dateLabel}
+                </p>
+                <div className="space-y-1">
+                  {dateChats.map((chat) => (
+                    <div
+                      key={chat.id}
+                      className={`group flex w-full items-start gap-2 rounded-lg transition-colors ${
+                        activeChatId === chat.id
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                      }`}
+                    >
+                      <button
+                        onClick={() => {
+                          onSelectChat(chat.id)
+                          onClose()
+                        }}
+                        className="flex flex-1 items-start gap-3 p-3 text-left min-w-0"
+                      >
+                        <MessageSquare className="mt-0.5 h-4 w-4 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{chat.title}</p>
+                          <p className="truncate text-xs text-sidebar-foreground/60">
+                            {chat.lastMessage}
+                          </p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDeleteChat(chat.id)
+                        }}
+                        className="p-3 opacity-0 group-hover:opacity-100 text-sidebar-foreground/40 hover:text-red-400 transition-all shrink-0"
+                        title="Delete chat"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Daily Progress */}
