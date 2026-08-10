@@ -64,9 +64,14 @@ export const createChat = async (req: AuthRequest, res: Response): Promise<void>
 
 export const getChatHistory = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const chats = await Chat.find({ user_id: req.userId })
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const chats = await Chat.find({
+      user_id: req.userId,
+      created_at: { $gte: sevenDaysAgo },
+    })
       .sort({ created_at: -1 })
-      .limit(20);
+      .limit(100);
 
     res.status(200).json({ status: 'success', data: { chats } });
   } catch (error) {
