@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, User, Activity } from 'lucide-react'
+import { Bot, User, Activity, Lightbulb } from 'lucide-react'
 import type { Message } from '@/lib/mock-data'
 import { NutritionCard } from '@/components/nutrition-card'
 import { FoodItemCard } from '@/components/food-item-card'
@@ -76,6 +76,31 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 carbsG={message.result.total_carbs_g || 0}
               />
             )}
+
+            {/* ── Health Tips ── */}
+            {message.result.health_tips && message.result.health_tips.length > 0 && (
+              <div className="mt-4 animate-in fade-in duration-700 delay-200">
+                <div className="flex items-center gap-1.5 mb-2 text-sm font-medium text-foreground">
+                  <Lightbulb className="w-4 h-4 text-yellow-400" />
+                  Health Tips
+                </div>
+                <div className="space-y-2">
+                  {message.result.health_tips.map((tip, idx) => (
+                    <div
+                      key={idx}
+                      className="flex gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5 animate-in slide-in-from-left-2 fade-in duration-500"
+                      style={{ animationDelay: `${idx * 80}ms` }}
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-bold text-emerald-400">
+                        {idx + 1}
+                      </span>
+                      <p className="text-xs leading-relaxed text-foreground/80">{tip}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             
             {message.result.activities && message.result.activities.length > 0 && (
               <div className="mt-4 bg-secondary/40 rounded-lg p-3 text-sm animate-in fade-in duration-700 delay-300">

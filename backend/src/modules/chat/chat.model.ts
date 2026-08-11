@@ -29,6 +29,7 @@ export interface IChatResult {
   consumption_time: string;
   frequency: string;
   activities: IActivity[];
+  health_tips: string[];
   health_note: string;
   disclaimer: string;
   status: 'success' | 'needs_clarification' | 'error';
@@ -74,6 +75,7 @@ const chatSchema = new Schema<IChat>({
       },
     ],
     health_note: { type: String, required: true },
+    health_tips: [{ type: String }],
     disclaimer: { type: String, required: true },
     status: { type: String, enum: ['success', 'needs_clarification', 'error'], required: true },
   },

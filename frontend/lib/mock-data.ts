@@ -11,6 +11,7 @@ export interface Message {
     total_fat_g: number
     total_carbs_g: number
     activities: Array<{ type: string; duration_minutes: number }>
+    health_tips?: string[]
     health_note: string
     disclaimer: string
     status: 'success' | 'needs_clarification' | 'error'

@@ -17,7 +17,7 @@ export const createChat = async (req: AuthRequest, res: Response): Promise<void>
     const nutritionData = await nutritionModule.lookup(foodData.items);
     
     // Base recommendations on the upper bound of calorie limits for safety margin
-    const recoData = await recommendModule.generate(nutritionData.total_max, userProfile);
+    const recoData = await recommendModule.generate(nutritionData.total_max, userProfile, nutritionData, message);
 
     // Construct exactly mapping to Chat model schema
     const result = {
@@ -42,6 +42,7 @@ export const createChat = async (req: AuthRequest, res: Response): Promise<void>
       consumption_time: recoData.consumption_time,
       frequency: recoData.frequency,
       activities: recoData.activities,
+      health_tips: recoData.health_tips,
       health_note: nutritionData.food_items.some(f => f.warning)
         ? 'Some items could not be reliably estimated — please provide more details.'
         : 'Nutrition values are estimated based on your description.',
