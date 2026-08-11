@@ -5,6 +5,14 @@ import { Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 
+const PLACEHOLDERS = [
+  "Tell me what you ate...",
+  "I had a chicken sandwich for lunch...",
+  "Log my breakfast: eggs and toast...",
+  "What calories are in an avocado?",
+  "2 slices of pizza and a coke...",
+]
+
 interface ChatInputProps {
   onSend: (message: string) => void
   disabled?: boolean
@@ -14,6 +22,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isFocused, setIsFocused] = useState(false)
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -22,6 +31,14 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`
     }
   }, [input])
+
+  // Rotate placeholder text every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,6 +86,24 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           isFocused ? 'border-primary/50 shadow-[0_0_20px_rgba(var(--primary),0.1)]' : 'border-border/50 shadow-sm'
         }`}
       >
+        {/* Animated Custom Placeholder Overlay */}
+        {!input && (
+          <div className="absolute top-3 left-4 pointer-events-none flex items-center pr-16 overflow-hidden">
+             <AnimatePresence mode="wait">
+               <motion.span
+                 key={placeholderIndex}
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0, y: -10 }}
+                 transition={{ duration: 0.3 }}
+                 className="text-sm text-muted-foreground truncate"
+               >
+                 {PLACEHOLDERS[placeholderIndex]}
+               </motion.span>
+             </AnimatePresence>
+          </div>
+        )}
+
         <textarea
           ref={textareaRef}
           value={input}
@@ -79,16 +114,15 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
-          placeholder="Tell me what you ate..."
           disabled={disabled}
           rows={1}
-          className="max-h-[200px] min-h-[44px] flex-1 resize-none bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="max-h-[200px] min-h-[44px] flex-1 resize-none bg-transparent px-4 py-3 text-sm text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 z-10"
         />
         
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="shrink-0 mb-1 mr-1"
+          className="shrink-0 mb-1 mr-1 z-10"
         >
           <Button
             type="submit"
