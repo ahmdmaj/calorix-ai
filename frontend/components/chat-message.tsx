@@ -20,10 +20,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
       )}
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
+        className={`max-w-[80%] rounded-2xl px-5 py-4 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md ${
           isAssistant
-            ? 'bg-card border border-border text-card-foreground'
-            : 'bg-primary text-primary-foreground'
+            ? 'bg-card/70 border border-border/50 text-card-foreground shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]'
+            : 'bg-primary/90 border border-primary/20 text-primary-foreground shadow-[0_4px_20px_-4px_rgba(var(--primary),0.3)]'
         }`}
       >
         <div className="whitespace-pre-wrap text-sm leading-relaxed">
